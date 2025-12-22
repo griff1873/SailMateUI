@@ -1,0 +1,35 @@
+@import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined');
+
+@theme {
+  --color-primary: #1392ec;
+  --color-background-light: #f6f7f8;
+  --color-background-dark: #101a22;
+
+  --color-skipper-primary: #00427A;
+  --color-skipper-secondary: #40E0D0;
+  --color-skipper-accent: #FFA500;
+  --color-skipper-success: #28A745;
+  --color-skipper-neutral-bg: #F4F7F9;
+  --color-skipper-neutral-text: #333333;
+
+  --color-calm-blue: #004A7C;
+  --color-vibrant-teal: #4ECDC4;
+  --color-light-gray: #F5F7FA;
+  --color-dark-gray: #333333;
+  --color-status-green: #28A745;
+  --color-status-orange: #FFC107;
+  --color-status-red: #DC3545;
+
+  --font-display: Inter, sans-serif;
+}
+
+.material-symbols-outlined {
+  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+}
+
+body {
+  font-family: var(--font-display);
+  @apply bg-background-light dark:bg-background-dark;
+}
