@@ -12,12 +12,6 @@ const CreateBoat = () => {
 
     const [formData, setFormData] = useState({
         name: '',
-        make: '',
-        model: '',
-        length: '',
-        beam: '',
-        draft: '',
-        sailNumber: '',
         shortName: '',
         calendarColor: '#3B82F6', // Default blue
         description: '',
@@ -46,12 +40,6 @@ const CreateBoat = () => {
                             setFormData(prev => ({
                                 ...prev,
                                 name: boat.name || '',
-                                make: boat.make || '',
-                                model: boat.model || '',
-                                length: boat.length || '',
-                                beam: boat.beam || '',
-                                draft: boat.draft || '',
-                                sailNumber: boat.sailNumber || '',
                                 shortName: boat.shortName || '',
                                 calendarColor: boat.calendarColor || '#3B82F6',
                                 description: boat.description || '',
@@ -78,11 +66,24 @@ const CreateBoat = () => {
         }
     };
 
+    const handleImageUpload = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                setFormData(prev => ({
+                    ...prev,
+                    image: reader.result
+                }));
+            };
+            reader.readAsDataURL(file);
+        }
+    };
+
     const validateForm = () => {
         const newErrors = {};
         if (!formData.name.trim()) newErrors.name = "Boat Name is required";
-        if (!formData.make.trim()) newErrors.make = "Make is required";
-        if (!formData.model.trim()) newErrors.model = "Model is required";
+        if (!formData.name.trim()) newErrors.name = "Boat Name is required";
 
         setErrors(newErrors);
         return Object.keys(newErrors).length === 0;
@@ -93,9 +94,6 @@ const CreateBoat = () => {
             try {
                 const payload = {
                     ...formData,
-                    length: formData.length ? parseFloat(formData.length) : 0,
-                    beam: formData.beam ? parseFloat(formData.beam) : 0,
-                    draft: formData.draft ? parseFloat(formData.draft) : 0,
                     profileId: parseInt(formData.profileId)
                 };
 
@@ -176,81 +174,28 @@ const CreateBoat = () => {
                                 </label>
                             </div>
 
-                            <div>
-                                <label className="flex flex-col">
-                                    <p className="text-sm font-medium leading-normal pb-2 text-skipper-neutral-text dark:text-white">Make <span className="text-status-red">*</span></p>
-                                    <input
-                                        name="make"
-                                        value={formData.make}
-                                        onChange={handleInputChange}
-                                        className={`flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-lg bg-light-gray dark:bg-background-dark text-dark-gray dark:text-white focus:outline-0 focus:ring-2 focus:ring-vibrant-teal border ${errors.make ? 'border-status-red' : 'border-gray-300 dark:border-gray-600'} focus:border-vibrant-teal h-12 placeholder:text-gray-400 p-3 text-base font-normal leading-normal`}
-                                        placeholder="e.g., Beneteau"
-                                    />
-                                    <InputError message={errors.make} />
-                                </label>
-                            </div>
-                            <div>
-                                <label className="flex flex-col">
-                                    <p className="text-sm font-medium leading-normal pb-2 text-skipper-neutral-text dark:text-white">Model <span className="text-status-red">*</span></p>
-                                    <input
-                                        name="model"
-                                        value={formData.model}
-                                        onChange={handleInputChange}
-                                        className={`flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-lg bg-light-gray dark:bg-background-dark text-dark-gray dark:text-white focus:outline-0 focus:ring-2 focus:ring-vibrant-teal border ${errors.model ? 'border-status-red' : 'border-gray-300 dark:border-gray-600'} focus:border-vibrant-teal h-12 placeholder:text-gray-400 p-3 text-base font-normal leading-normal`}
-                                        placeholder="e.g., Oceanis 45"
-                                    />
-                                    <InputError message={errors.model} />
-                                </label>
-                            </div>
-
-                            <div className="grid grid-cols-3 gap-4 sm:col-span-2">
-                                <label className="flex flex-col">
-                                    <p className="text-sm font-medium leading-normal pb-2 text-skipper-neutral-text dark:text-white">Length (ft)</p>
-                                    <input
-                                        name="length" type="number" step="0.1"
-                                        value={formData.length} onChange={handleInputChange}
-                                        className="flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-lg bg-light-gray dark:bg-background-dark text-dark-gray dark:text-white focus:outline-0 focus:ring-2 focus:ring-vibrant-teal border border-gray-300 dark:border-gray-600 focus:border-vibrant-teal h-12 placeholder:text-gray-400 p-3 text-base font-normal leading-normal"
-                                    />
-                                </label>
-                                <label className="flex flex-col">
-                                    <p className="text-sm font-medium leading-normal pb-2 text-skipper-neutral-text dark:text-white">Beam (ft)</p>
-                                    <input
-                                        name="beam" type="number" step="0.1"
-                                        value={formData.beam} onChange={handleInputChange}
-                                        className="flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-lg bg-light-gray dark:bg-background-dark text-dark-gray dark:text-white focus:outline-0 focus:ring-2 focus:ring-vibrant-teal border border-gray-300 dark:border-gray-600 focus:border-vibrant-teal h-12 placeholder:text-gray-400 p-3 text-base font-normal leading-normal"
-                                    />
-                                </label>
-                                <label className="flex flex-col">
-                                    <p className="text-sm font-medium leading-normal pb-2 text-skipper-neutral-text dark:text-white">Draft (ft)</p>
-                                    <input
-                                        name="draft" type="number" step="0.1"
-                                        value={formData.draft} onChange={handleInputChange}
-                                        className="flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-lg bg-light-gray dark:bg-background-dark text-dark-gray dark:text-white focus:outline-0 focus:ring-2 focus:ring-vibrant-teal border border-gray-300 dark:border-gray-600 focus:border-vibrant-teal h-12 placeholder:text-gray-400 p-3 text-base font-normal leading-normal"
-                                    />
-                                </label>
-                            </div>
 
                             <div>
                                 <label className="flex flex-col">
-                                    <p className="text-sm font-medium leading-normal pb-2 text-skipper-neutral-text dark:text-white">Sail Number</p>
+                                    <p className="text-sm font-medium leading-normal pb-2 text-skipper-neutral-text dark:text-white">Image</p>
                                     <input
-                                        name="sailNumber"
-                                        value={formData.sailNumber}
-                                        onChange={handleInputChange}
-                                        className="flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-lg bg-light-gray dark:bg-background-dark text-dark-gray dark:text-white focus:outline-0 focus:ring-2 focus:ring-vibrant-teal border border-gray-300 dark:border-gray-600 focus:border-vibrant-teal h-12 placeholder:text-gray-400 p-3 text-base font-normal leading-normal"
+                                        type="file"
+                                        accept="image/*"
+                                        onChange={handleImageUpload}
+                                        className="flex w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-calm-blue hover:file:bg-blue-100 dark:file:bg-gray-700 dark:file:text-gray-300"
                                     />
-                                </label>
-                            </div>
-                            <div>
-                                <label className="flex flex-col">
-                                    <p className="text-sm font-medium leading-normal pb-2 text-skipper-neutral-text dark:text-white">Image URL</p>
-                                    <input
-                                        name="image"
-                                        value={formData.image}
-                                        onChange={handleInputChange}
-                                        className="flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-lg bg-light-gray dark:bg-background-dark text-dark-gray dark:text-white focus:outline-0 focus:ring-2 focus:ring-vibrant-teal border border-gray-300 dark:border-gray-600 focus:border-vibrant-teal h-12 placeholder:text-gray-400 p-3 text-base font-normal leading-normal"
-                                        placeholder="https://example.com/boat.jpg"
-                                    />
+                                    {formData.image && (
+                                        <div className="mt-2 relative w-32 h-32">
+                                            <img src={formData.image} alt="Boat Preview" className="w-full h-full object-cover rounded-lg" />
+                                            <button
+                                                type="button"
+                                                onClick={() => setFormData(prev => ({ ...prev, image: '' }))}
+                                                className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 shadow-md hover:bg-red-600"
+                                            >
+                                                <span className="material-symbols-outlined text-xs">close</span>
+                                            </button>
+                                        </div>
+                                    )}
                                 </label>
                             </div>
 

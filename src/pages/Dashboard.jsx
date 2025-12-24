@@ -60,7 +60,7 @@ const Dashboard = () => {
 
     return (
         <>
-            <Header title="Skipper Dashboard" />
+            <Header title="Skipper Dashboard" showCreateButton={true} />
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 {/* My Boats & Upcoming Events Column */}
                 <div className="lg:col-span-2 flex flex-col gap-8">
@@ -74,8 +74,13 @@ const Dashboard = () => {
                                         // Calculate unique initials
                                         const seenInitials = {};
                                         return fleet.map((boat) => {
-                                            const words = (boat.name || '').trim().split(/\s+/);
-                                            let base = words.slice(0, 3).map(w => w[0]).join('').toUpperCase();
+                                            let base = "";
+                                            if (boat.shortName && boat.shortName.trim().length > 0) {
+                                                base = boat.shortName.trim().toUpperCase();
+                                            } else {
+                                                const words = (boat.name || '').trim().split(/\s+/);
+                                                base = words.slice(0, 3).map(w => w[0]).join('').toUpperCase();
+                                            }
 
                                             if (base.length === 0) base = "???";
 
@@ -101,14 +106,20 @@ const Dashboard = () => {
                                                             </div>
                                                         )}
                                                         {/* Initials Circle */}
-                                                        <div className="absolute top-2 right-2 flex items-center justify-center w-10 h-10 rounded-full bg-white dark:bg-gray-800 shadow-md border-2 border-skipper-primary dark:border-vibrant-teal z-10">
-                                                            <span className="text-xs font-bold text-skipper-primary dark:text-vibrant-teal">{initial}</span>
-                                                        </div>
+
                                                     </div>
-                                                    <div className="flex flex-col flex-1 justify-between p-4 pt-0">
-                                                        <div>
-                                                            <p className="text-skipper-neutral-text dark:text-white text-base font-medium leading-normal">{boat.name}</p>
-                                                            <p className="text-gray-500 dark:text-gray-400 text-sm font-normal leading-normal">{boat.make} {boat.model}</p>
+                                                    <div className="flex flex-col flex-1 justify-between p-4 pt-2">
+                                                        <div className="flex items-center gap-3">
+                                                            <div
+                                                                className="flex items-center justify-center w-10 h-10 rounded-full shadow-md border-2 border-white dark:border-gray-800 shrink-0"
+                                                                style={{ backgroundColor: boat.calendarColor || '#3B82F6' }}
+                                                            >
+                                                                <span className="text-xs font-bold text-white drop-shadow-sm">{initial}</span>
+                                                            </div>
+                                                            <div>
+                                                                <p className="text-skipper-neutral-text dark:text-white text-base font-medium leading-normal">{boat.name}</p>
+                                                                <p className="text-gray-500 dark:text-gray-400 text-sm font-normal leading-normal">{boat.make} {boat.model}</p>
+                                                            </div>
                                                         </div>
                                                         <button
                                                             onClick={() => navigate(`/boats/${boat.id}/edit`)}
@@ -151,11 +162,36 @@ const Dashboard = () => {
                                             onClick={() => navigate(`/events/${event.id}/edit`)} // Using window.location for simplicity, or better hook up useNavigate if accessible. unique to this file structure.
                                             className="flex flex-wrap items-center justify-between gap-4 p-4 rounded-lg hover:bg-gray-50 dark:hover:bg-white/5 transition-colors cursor-pointer"
                                         >
-                                            <div className="flex-grow">
-                                                <p className="text-skipper-neutral-text dark:text-white font-semibold hover:text-calm-blue dark:hover:text-vibrant-teal transition-colors">{event.name}</p>
-                                                <p className="text-gray-500 dark:text-gray-400 text-sm">
-                                                    {new Date(event.startDate).toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' })} @ {new Date(event.startDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} • {event.location}
-                                                </p>
+                                            <div className="flex-grow flex items-center gap-3">
+                                                {/* Event Boat Initials */}
+                                                {(() => {
+                                                    const boat = fleet.find(b => b.id === event.boatId);
+                                                    if (!boat) return null;
+
+                                                    let initial = "";
+                                                    if (boat.shortName && boat.shortName.trim().length > 0) {
+                                                        initial = boat.shortName.trim().toUpperCase();
+                                                    } else {
+                                                        const words = (boat.name || '').trim().split(/\s+/);
+                                                        initial = words.slice(0, 3).map(w => w[0]).join('').toUpperCase();
+                                                    }
+                                                    if (initial.length === 0) initial = "???";
+
+                                                    return (
+                                                        <div
+                                                            className="flex items-center justify-center w-8 h-8 rounded-full shadow-sm border border-white dark:border-gray-800 shrink-0"
+                                                            style={{ backgroundColor: boat.calendarColor || '#3B82F6' }}
+                                                        >
+                                                            <span className="text-[10px] font-bold text-white drop-shadow-sm">{initial}</span>
+                                                        </div>
+                                                    );
+                                                })()}
+                                                <div>
+                                                    <p className="text-skipper-neutral-text dark:text-white font-semibold hover:text-calm-blue dark:hover:text-vibrant-teal transition-colors">{event.name}</p>
+                                                    <p className="text-gray-500 dark:text-gray-400 text-sm">
+                                                        {new Date(event.startDate).toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' })} @ {new Date(event.startDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} • {event.location}
+                                                    </p>
+                                                </div>
                                             </div>
                                             <div className="flex items-center gap-4">
                                                 <div className="text-right">
