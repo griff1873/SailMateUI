@@ -5,11 +5,15 @@ import App from './App.jsx'
 import './index.css'
 import Auth0ProviderWithHistory from './auth/Auth0ProviderWithHistory';
 
+import { ProfileProvider } from './context/ProfileContext';
+
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <BrowserRouter>
       <Auth0ProviderWithHistory>
-        <App />
+        <ProfileProvider>
+          <App />
+        </ProfileProvider>
       </Auth0ProviderWithHistory>
     </BrowserRouter>
   </React.StrictMode>,

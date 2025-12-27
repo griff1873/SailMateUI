@@ -2,8 +2,28 @@ import React from 'react';
 import { NavLink } from 'react-router-dom';
 import { useAuth0 } from "@auth0/auth0-react";
 
+import { useProfile } from '../../context/ProfileContext';
+
 const Sidebar = () => {
     const { user, logout } = useAuth0();
+    const { profileData } = useProfile();
+
+    // Use profile data if available, otherwise fall back to Auth0 user data
+    const displayName = profileData?.name || user?.name;
+    const displayEmail = profileData?.email || user?.email;
+    const displayImage = profileData?.image; // Prefer profile image
+
+    // Calculate initials if no image
+    let initials = '';
+    if (!displayImage && displayName) {
+        const names = displayName.trim().split(' ').filter(n => n.length > 0);
+        if (names.length >= 2) {
+            initials = `${names[0][0]}${names[names.length - 1][0]}`.toUpperCase();
+        } else if (names.length === 1) {
+            initials = names[0].slice(0, 2).toUpperCase();
+        }
+    }
+
     const navItems = [
         { name: 'Dashboard', icon: 'dashboard', path: '/' },
         { name: 'My Boats', icon: 'sailing', path: '/boats' },
@@ -43,13 +63,20 @@ const Sidebar = () => {
                         to="/profile"
                         className="flex items-center gap-3 p-2 -mx-2 rounded-lg hover:bg-gray-100 dark:hover:bg-white/10 transition-colors group"
                     >
-                        <div
-                            className="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-10 border border-gray-200 dark:border-gray-700"
-                            style={{ backgroundImage: `url("${user?.picture}")` }}
-                        ></div>
+                        {displayImage ? (
+                            <div
+                                className="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-10 border border-gray-200 dark:border-gray-700"
+                                style={{ backgroundImage: `url("${displayImage}")` }}
+                            ></div>
+                        ) : (
+                            <div className="flex items-center justify-center aspect-square rounded-full size-10 bg-skipper-primary text-white text-sm font-bold border border-gray-200 dark:border-gray-700">
+                                {initials || <span className="material-symbols-outlined !text-xl">person</span>}
+                            </div>
+                        )}
+
                         <div className="flex flex-col overflow-hidden">
-                            <h1 className="text-skipper-neutral-text dark:text-white text-base font-medium leading-normal truncate group-hover:text-skipper-primary dark:group-hover:text-vibrant-teal transition-colors">{user?.name}</h1>
-                            <p className="text-gray-500 dark:text-gray-400 text-sm font-normal leading-normal truncate">{user?.email}</p>
+                            <h1 className="text-skipper-neutral-text dark:text-white text-base font-medium leading-normal truncate group-hover:text-skipper-primary dark:group-hover:text-vibrant-teal transition-colors text-left">{displayName}</h1>
+                            <p className="text-gray-500 dark:text-gray-400 text-sm font-normal leading-normal truncate text-left">{displayEmail}</p>
                         </div>
                     </NavLink>
                     <button

@@ -44,6 +44,7 @@ export const boatCrew = {
     delete: (id) => api.delete(`/BoatCrew/${id}`),
     getByBoat: (boatId) => api.get(`/BoatCrew/by-boat/${boatId}`),
     getByProfile: (profileId) => api.get(`/BoatCrew/by-profile/${profileId}`),
+    getPendingRequests: (profileId) => api.get(`/BoatCrew/pending-requests/${profileId}`),
     getAdminsByBoat: (boatId) => api.get(`/BoatCrew/admins/by-boat/${boatId}`),
 };
 
@@ -74,6 +75,15 @@ export const events = {
     delete: (id) => api.delete(`/Events/${id}`),
     getUpcoming: (params) => api.get('/Events/upcoming', { params }), // days, boatIds[]
     search: (params) => api.get('/Events/search', { params }), // name, location, startDate, endDate
+};
+
+export const crewEvent = {
+    getByEvent: (eventId) => api.get(`/CrewEvent/by-event/${eventId}`),
+    getByProfile: (profileId) => api.get(`/CrewEvent/by-profile/${profileId}`),
+    get: (id) => api.get(`/CrewEvent/${id}`),
+    create: (data) => api.post('/CrewEvent', data),
+    update: (id, data) => api.put(`/CrewEvent/${id}`, data),
+    delete: (id) => api.delete(`/CrewEvent/${id}`),
 };
 
 export const eventTypes = {

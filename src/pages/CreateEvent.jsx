@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useAuth0 } from "@auth0/auth0-react";
 import Header from '../components/layout/Header';
-import { boats, eventTypes, events, profile, setAuthToken } from '../services/api';
+import { boats, eventTypes, events, profile, boatCrew, crewEvent, setAuthToken } from '../services/api';
 
 const CreateEvent = () => {
     const { user, getAccessTokenSilently } = useAuth0();
@@ -11,6 +11,10 @@ const CreateEvent = () => {
 
     const [myBoats, setMyBoats] = useState([]);
     const [myEventTypes, setMyEventTypes] = useState([]);
+
+    // Crew Management State
+    const [boatCrewMembers, setBoatCrewMembers] = useState([]);
+    const [crewStatuses, setCrewStatuses] = useState([]); // Array of { profileId, status, id }
 
     // Date state for calendar view
     const [viewDate, setViewDate] = useState(new Date());
@@ -113,6 +117,76 @@ const CreateEvent = () => {
         };
         fetchEventDetails();
     }, [id, isEditMode, user, getAccessTokenSilently]);
+
+    // Fetch Boat Crew when boatId changes
+    useEffect(() => {
+        const fetchCrew = async () => {
+            if (formData.boatId && user) {
+                try {
+                    const token = await getAccessTokenSilently();
+                    setAuthToken(token);
+                    const res = await boatCrew.getByBoat(formData.boatId);
+                    // Filter out deleted crew or maybe show them? Usually active crew.
+                    // Assuming API returns valid crew.
+                    setBoatCrewMembers(res.data);
+                } catch (err) {
+                    console.error("Error fetching boat crew:", err);
+                }
+            } else {
+                setBoatCrewMembers([]);
+            }
+        };
+        fetchCrew();
+    }, [formData.boatId, user, getAccessTokenSilently]);
+
+    // Fetch Crew Event Statuses (Edit Mode)
+    useEffect(() => {
+        const fetchStatuses = async () => {
+            if (isEditMode && id && user) {
+                try {
+                    const token = await getAccessTokenSilently();
+                    setAuthToken(token);
+                    const res = await crewEvent.getByEvent(id);
+                    setCrewStatuses(res.data);
+                } catch (err) {
+                    console.error("Error fetching crew statuses:", err);
+                }
+            }
+        };
+        fetchStatuses();
+    }, [isEditMode, id, user, getAccessTokenSilently]);
+
+    const handleCrewStatusChange = async (crewProfileId, newStatus) => {
+        if (!isEditMode) {
+            alert("Please save the event first to manage crew attendance.");
+            return;
+        }
+
+        try {
+            const token = await getAccessTokenSilently();
+            setAuthToken(token);
+
+            const existingStatus = crewStatuses.find(s => s.profileId === crewProfileId);
+
+            if (existingStatus) {
+                // Update
+                const res = await crewEvent.update(existingStatus.id, { status: newStatus });
+                setCrewStatuses(prev => prev.map(s => s.id === existingStatus.id ? res.data : s));
+            } else {
+                // Create
+                const payload = {
+                    eventId: parseInt(id),
+                    profileId: crewProfileId,
+                    status: newStatus
+                };
+                const res = await crewEvent.create(payload);
+                setCrewStatuses(prev => [...prev, res.data]);
+            }
+        } catch (err) {
+            console.error("Error updating crew status:", err);
+            alert("Failed to update status.");
+        }
+    };
 
 
 
@@ -471,49 +545,75 @@ const CreateEvent = () => {
 
                     {/* Crew Invitation Section (Full Width) */}
                     <section className="bg-white dark:bg-background-dark/50 p-6 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
-                        <h2 className="text-xl font-bold text-calm-blue dark:text-vibrant-teal mb-6">Invite Your Crew</h2>
-                        <div className="relative mb-6">
-                            <label className="flex flex-col">
-                                <p className="text-sm font-medium leading-normal pb-2 text-skipper-neutral-text dark:text-white">Search Crew Members</p>
-                                <div className="relative">
-                                    <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">search</span>
-                                    <input className="flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-lg bg-light-gray dark:bg-background-dark text-dark-gray dark:text-white focus:outline-0 focus:ring-2 focus:ring-vibrant-teal border border-gray-300 dark:border-gray-600 focus:border-vibrant-teal h-12 placeholder:text-gray-400 pl-10 pr-3 py-3 text-base font-normal leading-normal" placeholder="Find crew by name or email..." />
-                                </div>
-                            </label>
-                        </div>
+                        <h2 className="text-xl font-bold text-calm-blue dark:text-vibrant-teal mb-6">Your Crew</h2>
+
                         <div className="space-y-3">
-                            <p className="text-sm font-medium leading-normal text-skipper-neutral-text dark:text-white">Invited Crew (3)</p>
+                            <p className="text-sm font-medium leading-normal text-skipper-neutral-text dark:text-white">
+                                {boatCrewMembers.length > 0 ? `Crew Members (${boatCrewMembers.length})` : 'No crew members found for this boat.'}
+                            </p>
+
                             {/* Crew Member List */}
-                            <div className="flex items-center justify-between p-3 rounded-lg bg-light-gray/50 dark:bg-background-dark">
-                                <div className="flex items-center gap-3">
-                                    <img className="h-10 w-10 rounded-full object-cover" alt="Avatar of Alex Johnson" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAr87N58VQAKVekSSzJyaScfQvb2cpzSXgZF-RhpHQeSv9JI5KL_F8ZYGT_73v027ZdVBPR-2OfZERsDXgWhh5yVngtA3KQPFxOYK2vmMOSEegPTcJkS6Dr6G6MXc-JesfMPBbcYjZiJLcYbbv5NARk_1zqAElCZBCYcmdp_PetUaEJf6LPZOA4Vyhi9lNsPuNU1J4ItaClEIsUGTo3cGcd_tRRlhKxdODKdLdZdRd4t6tmMPV35iEdgVdCTgis308F-4ibTJcRs7Y" />
-                                    <div>
-                                        <p className="font-semibold text-skipper-neutral-text dark:text-white">Alex Johnson</p>
-                                        <span className="flex items-center gap-1.5 text-xs text-status-green font-medium"><span className="h-2 w-2 rounded-full bg-status-green"></span>Accepted</span>
+                            {boatCrewMembers.map(member => {
+                                const statusObj = crewStatuses.find(s => s.profileId === member.profileId);
+                                const currentStatus = statusObj ? statusObj.status : null;
+
+                                return (
+                                    <div key={member.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-3 rounded-lg bg-light-gray/50 dark:bg-background-dark gap-4">
+                                        <div className="flex items-center gap-3">
+                                            <div
+                                                className="h-10 w-10 rounded-full bg-cover bg-center bg-no-repeat"
+                                                style={{ backgroundImage: `url("${member.profile.image || ''}")` }}
+                                            >
+                                                {!member.profile.image && (
+                                                    <div className="h-full w-full rounded-full bg-skipper-primary flex items-center justify-center text-white font-bold text-xs">
+                                                        {(member.profile.name || '??').substring(0, 2).toUpperCase()}
+                                                    </div>
+                                                )}
+                                            </div>
+                                            <div>
+                                                <p className="font-semibold text-skipper-neutral-text dark:text-white">{member.profile.name}</p>
+                                                <p className="text-xs text-gray-500 dark:text-gray-400">{member.isAdmin ? 'Admin' : 'Crew'}</p>
+                                            </div>
+                                        </div>
+
+                                        <div className="flex items-center gap-2">
+                                            {/* In Button */}
+                                            <button
+                                                onClick={() => handleCrewStatusChange(member.profileId, 'In')}
+                                                disabled={!isEditMode}
+                                                className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${currentStatus === 'In'
+                                                        ? 'bg-status-green text-white'
+                                                        : 'border border-gray-200 dark:border-gray-700 text-gray-500 hover:text-status-green hover:border-status-green dark:text-gray-400'
+                                                    }`}
+                                            >
+                                                In
+                                            </button>
+                                            {/* Maybe Button */}
+                                            <button
+                                                onClick={() => handleCrewStatusChange(member.profileId, 'Maybe')}
+                                                disabled={!isEditMode}
+                                                className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${currentStatus === 'Maybe'
+                                                        ? 'bg-status-orange text-white'
+                                                        : 'border border-gray-200 dark:border-gray-700 text-gray-500 hover:text-status-orange hover:border-status-orange dark:text-gray-400'
+                                                    }`}
+                                            >
+                                                Maybe
+                                            </button>
+                                            {/* Out Button */}
+                                            <button
+                                                onClick={() => handleCrewStatusChange(member.profileId, 'Out')}
+                                                disabled={!isEditMode}
+                                                className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${currentStatus === 'Out'
+                                                        ? 'bg-status-red text-white'
+                                                        : 'border border-gray-200 dark:border-gray-700 text-gray-500 hover:text-status-red hover:border-status-red dark:text-gray-400'
+                                                    }`}
+                                            >
+                                                Out
+                                            </button>
+                                        </div>
                                     </div>
-                                </div>
-                                <button className="text-gray-500 hover:text-status-red dark:text-gray-400 dark:hover:text-status-red"><span className="material-symbols-outlined">close</span></button>
-                            </div>
-                            <div className="flex items-center justify-between p-3 rounded-lg bg-light-gray/50 dark:bg-background-dark">
-                                <div className="flex items-center gap-3">
-                                    <img className="h-10 w-10 rounded-full object-cover" alt="Avatar of Maria Garcia" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAEDSRIqnZXr-_PJ_rGm9pFnEpbccJRMBra_usXfaozO8QLqmtEvYNv-idkj166NkQhdSORQjrKDNyWd6brhBGfp6u-Ef_WULrDoCfvACDsSzZAPmjNmVCvFXfLz6s08Ne2RQHiu4vhk-1CfqFqnTNF4k-7QMnaaWevbTH9Vkw9Wo8PT8LnW00CsL7aGrCPHXyR2tOH88Vj2-wSxg6tk69-Po_LRJAE0Zfdiyc1YDcgLTDGxe4N5OqrdvbKajTwPR_wfn-o5A-36Ho" />
-                                    <div>
-                                        <p className="font-semibold text-skipper-neutral-text dark:text-white">Maria Garcia</p>
-                                        <span className="flex items-center gap-1.5 text-xs text-status-orange font-medium"><span className="h-2 w-2 rounded-full bg-status-orange"></span>Invited</span>
-                                    </div>
-                                </div>
-                                <button className="text-gray-500 hover:text-status-red dark:text-gray-400 dark:hover:text-status-red"><span className="material-symbols-outlined">close</span></button>
-                            </div>
-                            <div className="flex items-center justify-between p-3 rounded-lg bg-light-gray/50 dark:bg-background-dark">
-                                <div className="flex items-center gap-3">
-                                    <img className="h-10 w-10 rounded-full object-cover" alt="Avatar of Ben Carter" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC2g8tSpIZhGLrHALDTR34URoUp4cA1WzQbjXINdvxZO1y0JJP3Ebzs6bwis3dx6eax_OUiGYo3sI79BWv7YTNyJVa8cVYOiXSuKVhmAVgkZdkb_wNnhME5YEQtlfZ3bMZCGnXJcbURDRySpspa752Mg8i2uOiCKaF5am28vpo7qwmRQyPDMPwOMvX3Lxt1igZCSe53lhi0m-lxVyOyjxi8po23qe_6jammeoZ-NBeiZE29tp3KDa8X12xymCXv93suumIHWURDNLo" />
-                                    <div>
-                                        <p className="font-semibold text-skipper-neutral-text dark:text-white">Ben Carter</p>
-                                        <span className="flex items-center gap-1.5 text-xs text-status-red font-medium"><span className="h-2 w-2 rounded-full bg-status-red"></span>Declined</span>
-                                    </div>
-                                </div>
-                                <button className="text-gray-500 hover:text-status-red dark:text-gray-400 dark:hover:text-status-red"><span className="material-symbols-outlined">close</span></button>
-                            </div>
+                                );
+                            })}
                         </div>
                     </section>
                 </div>

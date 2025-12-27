@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useAuth0 } from "@auth0/auth0-react";
 import Header from '../components/layout/Header';
 import { profile, setAuthToken } from '../services/api';
+import { useProfile } from '../context/ProfileContext';
 
 const US_STATES = [
     { value: 'AL', label: 'Alabama' },
@@ -67,47 +68,41 @@ const Profile = () => {
         address: '',
         city: '',
         state: '',
-        zip: ''
+        zip: '',
+        image: ''
     });
 
-    const fetchProfile = async () => {
-        if (user && user.email) {
-            try {
-                const token = await getAccessTokenSilently();
-                setAuthToken(token);
-                // We use searchByEmail which returns a list, or exact-email? 
-                // Wait, logic in api.js says getByEmail returns single object?
-                // Actually ProfileGuard uses getByEmail.
-                // If it fails, we catch it.
-                const res = await profile.getByEmail(user.email);
-                setProfileData(res.data);
-                setFormData({
-                    name: res.data.name || '',
-                    phone: res.data.phone || '',
-                    address: res.data.address || '',
-                    city: res.data.city || '',
-                    state: res.data.state || '',
-                    zip: res.data.zip || ''
-                });
-            } catch (error) {
-                console.error("Error fetching profile (may not exist):", error);
-                // If profile not found, we want to create one.
-                setProfileData(null);
-                setFormData(prev => ({
-                    ...prev,
-                    name: user.name || '',
-                }));
-                setIsEditing(true);
-            } finally {
-                setLoading(false);
-            }
-        }
-    };
+
+
+    const { profileData: contextProfile, updateProfileState } = useProfile();
 
     useEffect(() => {
-        fetchProfile();
-    }, [user, getAccessTokenSilently]);
+        if (contextProfile) {
+            setProfileData(contextProfile);
+            setFormData(prev => ({
+                ...prev,
+                name: contextProfile.name || '',
+                phone: contextProfile.phone || '',
+                address: contextProfile.address || '',
+                city: contextProfile.city || '',
+                state: contextProfile.state || '',
+                zip: contextProfile.zip || '',
+                image: contextProfile.image || ''
+            }));
+            setLoading(false);
+        } else if (contextProfile === null && user) {
+            // Profile doesn't exist yet, but context is loaded
+            setProfileData(null);
+            setFormData(prev => ({
+                ...prev,
+                name: user.name || '',
+            }));
+            setIsEditing(true);
+            setLoading(false);
+        }
+    }, [contextProfile, user]);
 
+    // Format phone number
     const formatPhoneNumber = (value) => {
         if (!value) return value;
         const phoneNumber = value.replace(/[^\d]/g, '');
@@ -132,6 +127,20 @@ const Profile = () => {
         }));
     };
 
+    const handleImageChange = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                setFormData(prev => ({
+                    ...prev,
+                    image: reader.result
+                }));
+            };
+            reader.readAsDataURL(file);
+        }
+    };
+
     const handleSave = async () => {
         try {
             const token = await getAccessTokenSilently();
@@ -141,11 +150,13 @@ const Profile = () => {
                 const payload = { ...profileData, ...formData };
                 await profile.update(profileData.id, payload);
                 setProfileData(payload);
+                updateProfileState(payload); // Update global context
             } else {
                 // Create new profile
                 const payload = { ...formData, email: user.email, LoginId: user.sub };
                 const res = await profile.create(payload);
                 setProfileData(res.data);
+                updateProfileState(res.data); // Update global context
             }
             setIsEditing(false);
         } catch (error) {
@@ -155,14 +166,17 @@ const Profile = () => {
     };
 
     const handleCancel = () => {
-        setFormData({
-            name: profileData.name || '',
-            phone: profileData.phone || '',
-            address: profileData.address || '',
-            city: profileData.city || '',
-            state: profileData.state || '',
-            zip: profileData.zip || ''
-        });
+        if (profileData) {
+            setFormData({
+                name: profileData.name || '',
+                phone: profileData.phone || '',
+                address: profileData.address || '',
+                city: profileData.city || '',
+                state: profileData.state || '',
+                zip: profileData.zip || '',
+                image: profileData.image || ''
+            });
+        }
         setIsEditing(false);
     };
 
@@ -174,6 +188,19 @@ const Profile = () => {
         );
     }
 
+    const displayImage = formData.image || user?.picture;
+    const displayName = formData.name || user?.name;
+
+    let initials = '';
+    if (displayName) {
+        const names = displayName.trim().split(' ').filter(n => n.length > 0);
+        if (names.length >= 2) {
+            initials = `${names[0][0]}${names[names.length - 1][0]}`.toUpperCase();
+        } else if (names.length === 1) {
+            initials = names[0].slice(0, 2).toUpperCase();
+        }
+    }
+
     return (
         <div className="flex-1">
             <Header title="My Profile" />
@@ -183,9 +210,39 @@ const Profile = () => {
                     <div className="p-8">
                         <div className="relative flex justify-between items-start mb-6">
 
+                            {/* Profile Image - Always visible, but input only in edit mode */}
+                            <div className="mr-6 shrink-0 relative">
+                                <div
+                                    className={`w-24 h-24 rounded-full bg-cover bg-center border-2 border-white dark:border-background-dark shadow-md flex items-center justify-center ${!displayImage ? 'bg-skipper-primary text-white' : ''}`}
+                                    style={displayImage ? {
+                                        backgroundImage: `url("${displayImage}")`,
+                                        backgroundColor: '#f3f4f6'
+                                    } : {}}
+                                >
+                                    {!displayImage && (
+                                        <span className="text-3xl font-bold">
+                                            {initials || <span className="material-symbols-outlined !text-4xl text-white">person</span>}
+                                        </span>
+                                    )}
+                                </div>
 
+                                {isEditing && (
+                                    <div className="absolute -bottom-2 -right-2">
+                                        <label htmlFor="image-upload" className="cursor-pointer bg-calm-blue dark:bg-vibrant-teal text-white p-2 rounded-full shadow-lg hover:bg-calm-blue/90 dark:hover:bg-vibrant-teal/90 transition-colors">
+                                            <span className="material-symbols-outlined !text-lg">photo_camera</span>
+                                        </label>
+                                        <input
+                                            id="image-upload"
+                                            type="file"
+                                            accept="image/*"
+                                            onChange={handleImageChange}
+                                            className="hidden"
+                                        />
+                                    </div>
+                                )}
+                            </div>
 
-                            <div className="space-y-6">
+                            <div className="space-y-6 flex-grow">
                                 <div>
                                     {!isEditing ? (
                                         <h2 className="text-2xl font-bold text-skipper-neutral-text dark:text-white">{profileData?.name}</h2>
@@ -296,7 +353,7 @@ const Profile = () => {
                                 )}
                             </div>
 
-                            <div>
+                            <div className="shrink-0 ml-4">
                                 <div>
                                     {!isEditing && (
                                         <button
@@ -307,7 +364,8 @@ const Profile = () => {
                                                     address: profileData.address || '',
                                                     city: profileData.city || '',
                                                     state: profileData.state || '',
-                                                    zip: profileData.zip || ''
+                                                    zip: profileData.zip || '',
+                                                    image: profileData.image || ''
                                                 });
                                                 setIsEditing(true);
                                             }}
@@ -324,7 +382,7 @@ const Profile = () => {
 
 
                     {isEditing && (
-                        <div className="flex justify-end items-center gap-4 mt-8 pt-6 border-t border-gray-100 dark:border-gray-700">
+                        <div className="flex justify-end items-center gap-4 mt-8 pt-6 border-t border-gray-100 dark:border-gray-700 p-8">
                             {profileData && (
                                 <button
                                     onClick={handleCancel}
