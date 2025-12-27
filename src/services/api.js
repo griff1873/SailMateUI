@@ -57,6 +57,7 @@ export const boats = {
     getByProfile: (profileId) => api.get(`/Boats/by-profile/${profileId}`),
     getSchedules: (id) => api.get(`/Boats/${id}/schedules`),
     search: (params) => api.get('/Boats/search', { params }), // name, profileId
+    searchAll: (name) => api.get('/Boats/search-all', { params: { name } }),
 };
 
 export const events = {

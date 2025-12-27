@@ -60,7 +60,7 @@ const Dashboard = () => {
 
     return (
         <>
-            <Header title="Skipper Dashboard" showCreateButton={true} />
+            <Header title="Dashboard" showCreateButton={true} />
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 {/* My Boats & Upcoming Events Column */}
                 <div className="lg:col-span-2 flex flex-col gap-8">
@@ -69,7 +69,7 @@ const Dashboard = () => {
                         <h2 className="text-skipper-neutral-text dark:text-gray-200 text-2xl font-bold leading-tight tracking-[-0.015em] mb-4">My Fleet</h2>
                         <div className="flex overflow-x-auto [-ms-scrollbar-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden -mx-2 px-2">
                             <div className="flex items-stretch gap-6">
-                                {fleet.length > 0 ? (
+                                {fleet.length > 0 &&
                                     (() => {
                                         // Calculate unique initials
                                         const seenInitials = {};
@@ -132,11 +132,7 @@ const Dashboard = () => {
                                             );
                                         });
                                     })()
-                                ) : (
-                                    <div className="flex flex-col items-center justify-center min-w-64 p-8 text-center text-gray-500">
-                                        <p>No boats found.</p>
-                                    </div>
-                                )}
+                                }
 
                                 {/* Add New Boat */}
                                 <div
@@ -147,6 +143,17 @@ const Dashboard = () => {
                                         <span className="material-symbols-outlined text-gray-500 dark:text-gray-400 !text-3xl">add</span>
                                     </div>
                                     <p className="text-skipper-neutral-text dark:text-white text-base font-medium leading-normal">Add New Boat</p>
+                                </div>
+
+                                {/* Find Boats */}
+                                <div
+                                    onClick={() => navigate('/boats/search')}
+                                    className="flex flex-col items-center justify-center rounded-xl bg-transparent border-2 border-dashed border-gray-300 dark:border-gray-700 min-w-64 p-4 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors cursor-pointer"
+                                >
+                                    <div className="flex items-center justify-center size-12 bg-gray-200 dark:bg-gray-700 rounded-full mb-2">
+                                        <span className="material-symbols-outlined text-gray-500 dark:text-gray-400 !text-3xl">search</span>
+                                    </div>
+                                    <p className="text-skipper-neutral-text dark:text-white text-base font-medium leading-normal">Find Boats</p>
                                 </div>
                             </div>
                         </div>

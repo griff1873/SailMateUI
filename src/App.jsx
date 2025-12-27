@@ -5,6 +5,7 @@ import Dashboard from './pages/Dashboard';
 import Welcome from './pages/Welcome';
 import CreateEvent from './pages/CreateEvent';
 import CreateBoat from './pages/CreateBoat';
+import SearchBoats from './pages/SearchBoats';
 import Profile from './pages/Profile';
 import { AuthenticationGuard } from './auth/AuthenticationGuard';
 import ProfileGuard from './auth/ProfileGuard';
@@ -20,6 +21,7 @@ function App() {
           <Route path="events/:id/edit" element={<CreateEvent />} />
 
           <Route path="boats/create" element={<CreateBoat />} />
+          <Route path="boats/search" element={<SearchBoats />} />
           <Route path="boats/:id/edit" element={<CreateBoat />} />
         </Route>
 
