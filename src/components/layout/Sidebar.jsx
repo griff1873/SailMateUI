@@ -39,16 +39,19 @@ const Sidebar = () => {
                     ))}
                 </nav>
                 <div className="flex flex-col gap-4">
-                    <div className="flex items-center gap-3">
+                    <NavLink
+                        to="/profile"
+                        className="flex items-center gap-3 p-2 -mx-2 rounded-lg hover:bg-gray-100 dark:hover:bg-white/10 transition-colors group"
+                    >
                         <div
-                            className="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-10"
+                            className="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-10 border border-gray-200 dark:border-gray-700"
                             style={{ backgroundImage: `url("${user?.picture}")` }}
                         ></div>
-                        <div className="flex flex-col">
-                            <h1 className="text-skipper-neutral-text dark:text-white text-base font-medium leading-normal">{user?.name}</h1>
-                            <p className="text-gray-500 dark:text-gray-400 text-sm font-normal leading-normal">{user?.email}</p>
+                        <div className="flex flex-col overflow-hidden">
+                            <h1 className="text-skipper-neutral-text dark:text-white text-base font-medium leading-normal truncate group-hover:text-skipper-primary dark:group-hover:text-vibrant-teal transition-colors">{user?.name}</h1>
+                            <p className="text-gray-500 dark:text-gray-400 text-sm font-normal leading-normal truncate">{user?.email}</p>
                         </div>
-                    </div>
+                    </NavLink>
                     <button
                         onClick={() => logout({ logoutParams: { returnTo: window.location.origin } })}
                         className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-white/10 text-skipper-neutral-text dark:text-gray-300 w-full text-left"

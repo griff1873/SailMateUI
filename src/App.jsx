@@ -5,19 +5,25 @@ import Dashboard from './pages/Dashboard';
 import Welcome from './pages/Welcome';
 import CreateEvent from './pages/CreateEvent';
 import CreateBoat from './pages/CreateBoat';
+import Profile from './pages/Profile';
 import { AuthenticationGuard } from './auth/AuthenticationGuard';
+import ProfileGuard from './auth/ProfileGuard';
 
 function App() {
   return (
     <Routes>
       <Route path="/welcome" element={<Welcome />} />
       <Route path="/" element={<AuthenticationGuard component={MainLayout} />}>
-        <Route index element={<Dashboard />} />
-        <Route path="events/create" element={<CreateEvent />} />
-        <Route path="events/:id/edit" element={<CreateEvent />} />
-        <Route path="events/:id/edit" element={<CreateEvent />} />
-        <Route path="boats/create" element={<CreateBoat />} />
-        <Route path="boats/:id/edit" element={<CreateBoat />} />
+        <Route element={<ProfileGuard />}>
+          <Route index element={<Dashboard />} />
+          <Route path="events/create" element={<CreateEvent />} />
+          <Route path="events/:id/edit" element={<CreateEvent />} />
+
+          <Route path="boats/create" element={<CreateBoat />} />
+          <Route path="boats/:id/edit" element={<CreateBoat />} />
+        </Route>
+
+        <Route path="profile" element={<Profile />} />
         {/* Add more routes here */}
         <Route path="*" element={<div>Not Found</div>} />
       </Route>
