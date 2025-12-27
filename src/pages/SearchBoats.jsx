@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth0 } from "@auth0/auth0-react";
 import Header from '../components/layout/Header';
-import { boats, setAuthToken } from '../services/api';
+import { boats, profile, boatCrew, setAuthToken } from '../services/api';
 
 const SearchBoats = () => {
-    const { getAccessTokenSilently } = useAuth0();
+    const { getAccessTokenSilently, user } = useAuth0();
     const [searchTerm, setSearchTerm] = useState('');
     const [results, setResults] = useState([]);
     const [loading, setLoading] = useState(false);
@@ -18,7 +18,7 @@ const SearchBoats = () => {
                 try {
                     const token = await getAccessTokenSilently();
                     setAuthToken(token);
-                    const res = await boats.searchAll(searchTerm);
+                    const res = await boats.searchAll(searchTerm, userProfileId);
                     setResults(res.data);
                 } catch (error) {
                     console.error("Error searching boats:", error);
@@ -39,10 +39,50 @@ const SearchBoats = () => {
         return () => clearTimeout(timeoutId);
     }, [searchTerm, getAccessTokenSilently]);
 
-    const handleJoinCrew = (boatId) => {
-        // Placeholder for join logic
-        console.log(`Request to join boat ${boatId}`);
-        alert("Join request sent! (Placeholder)");
+    const [userProfileId, setUserProfileId] = useState(null);
+
+    useEffect(() => {
+        const fetchUserProfile = async () => {
+            try {
+                const token = await getAccessTokenSilently();
+                setAuthToken(token);
+                if (user?.email) {
+                    const res = await profile.getByEmail(user.email);
+                    setUserProfileId(res.data.id);
+                }
+            } catch (error) {
+                console.error("Error fetching user profile:", error);
+            }
+        };
+        if (user) {
+            fetchUserProfile();
+        }
+    }, [user, getAccessTokenSilently]);
+
+    const [requestedBoatIds, setRequestedBoatIds] = useState(new Set());
+
+    const handleJoinCrew = async (boatId) => {
+        if (!userProfileId) {
+            alert("Could not identify your profile. Please try reloading.");
+            return;
+        }
+
+        try {
+            await boatCrew.create({
+                profileId: userProfileId,
+                boatId: boatId,
+                isAdmin: false
+            });
+            // alert("Request sent! Status: Pending"); // UI update replaces alert
+            setRequestedBoatIds(prev => new Set(prev).add(boatId));
+        } catch (error) {
+            console.error("Error joining crew:", error);
+            if (error.response && error.response.data && error.response.data.message) {
+                alert(`Error: ${error.response.data.message}`);
+            } else {
+                alert("Failed to join crew.");
+            }
+        }
     };
 
     return (
@@ -77,41 +117,48 @@ const SearchBoats = () => {
                 {!loading && hasSearched && (
                     <div className="flex flex-col gap-4">
                         {results.length > 0 ? (
-                            results.map((boat) => (
-                                <div key={boat.id} className="bg-white dark:bg-background-dark p-6 rounded-xl shadow-sm border border-gray-100 dark:border-gray-800 flex flex-col md:flex-row gap-6 items-start md:items-center">
-                                    {/* Boat Image/Icon */}
-                                    <div className="shrink-0">
-                                        {boat.image ? (
-                                            <div
-                                                className="w-24 h-24 rounded-lg bg-center bg-cover border border-gray-200 dark:border-gray-700"
-                                                style={{ backgroundImage: `url("${boat.image.startsWith('data:') ? boat.image : `data:image/jpeg;base64,${boat.image}`}")` }}
-                                            ></div>
-                                        ) : (
-                                            <div className="w-24 h-24 rounded-lg bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center border border-blue-100 dark:border-blue-900/30">
-                                                <span className="material-symbols-outlined !text-4xl text-blue-300 dark:text-blue-500">sailing</span>
-                                            </div>
-                                        )}
-                                    </div>
+                            results.map((boat) => {
+                                const isRequested = requestedBoatIds.has(boat.id);
+                                return (
+                                    <div key={boat.id} className="bg-white dark:bg-background-dark p-6 rounded-xl shadow-sm border border-gray-100 dark:border-gray-800 flex flex-col md:flex-row gap-6 items-start md:items-center">
+                                        {/* Boat Image/Icon */}
+                                        <div className="shrink-0">
+                                            {boat.image ? (
+                                                <div
+                                                    className="w-24 h-24 rounded-lg bg-center bg-cover border border-gray-200 dark:border-gray-700"
+                                                    style={{ backgroundImage: `url("${boat.image.startsWith('data:') ? boat.image : `data:image/jpeg;base64,${boat.image}`}")` }}
+                                                ></div>
+                                            ) : (
+                                                <div className="w-24 h-24 rounded-lg bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center border border-blue-100 dark:border-blue-900/30">
+                                                    <span className="material-symbols-outlined !text-4xl text-blue-300 dark:text-blue-500">sailing</span>
+                                                </div>
+                                            )}
+                                        </div>
 
-                                    {/* Info */}
-                                    <div className="flex-grow">
-                                        <h3 className="text-xl font-bold text-skipper-neutral-text dark:text-white mb-1">{boat.name}</h3>
-                                        <p className="text-gray-500 dark:text-gray-400 text-sm mb-2">{boat.make} {boat.model}</p>
-                                        <p className="text-skipper-neutral-text dark:text-gray-300 line-clamp-2">{boat.description || "No description provided."}</p>
-                                    </div>
+                                        {/* Info */}
+                                        <div className="flex-grow">
+                                            <h3 className="text-xl font-bold text-skipper-neutral-text dark:text-white mb-1">{boat.name}</h3>
+                                            <p className="text-gray-500 dark:text-gray-400 text-sm mb-2">{boat.make} {boat.model}</p>
+                                            <p className="text-skipper-neutral-text dark:text-gray-300 line-clamp-2">{boat.description || "No description provided."}</p>
+                                        </div>
 
-                                    {/* Join Button */}
-                                    <div className="shrink-0 w-full md:w-auto mt-4 md:mt-0">
-                                        <button
-                                            onClick={() => handleJoinCrew(boat.id)}
-                                            className="w-full md:w-auto flex items-center justify-center gap-2 px-6 py-3 bg-calm-blue dark:bg-vibrant-teal text-white dark:text-background-dark font-bold rounded-lg hover:bg-calm-blue/90 dark:hover:bg-vibrant-teal/90 transition-colors shadow-md"
-                                        >
-                                            <span className="material-symbols-outlined !text-xl">group_add</span>
-                                            Join Crew
-                                        </button>
+                                        {/* Join Button */}
+                                        <div className="shrink-0 w-full md:w-auto mt-4 md:mt-0">
+                                            <button
+                                                onClick={() => handleJoinCrew(boat.id)}
+                                                disabled={isRequested}
+                                                className={`w-full md:w-auto flex items-center justify-center gap-2 px-6 py-3 font-bold rounded-lg transition-colors shadow-md ${isRequested
+                                                    ? "bg-gray-300 dark:bg-gray-700 text-gray-500 dark:text-gray-400 cursor-not-allowed"
+                                                    : "bg-calm-blue dark:bg-vibrant-teal text-white dark:text-background-dark hover:bg-calm-blue/90 dark:hover:bg-vibrant-teal/90"
+                                                    }`}
+                                            >
+                                                <span className="material-symbols-outlined !text-xl">{isRequested ? 'check' : 'group_add'}</span>
+                                                {isRequested ? 'Request Sent' : 'Join Crew'}
+                                            </button>
+                                        </div>
                                     </div>
-                                </div>
-                            ))
+                                );
+                            })
                         ) : (
                             <div className="text-center py-12 bg-white dark:bg-background-dark rounded-xl border border-dashed border-gray-300 dark:border-gray-700">
                                 <span className="material-symbols-outlined !text-5xl text-gray-300 mb-4">sailing</span>
