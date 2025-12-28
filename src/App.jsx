@@ -7,6 +7,7 @@ import CreateEvent from './pages/CreateEvent';
 import CreateBoat from './pages/CreateBoat';
 import SearchBoats from './pages/SearchBoats';
 import Profile from './pages/Profile';
+import Crew from './pages/Crew';
 import { AuthenticationGuard } from './auth/AuthenticationGuard';
 import ProfileGuard from './auth/ProfileGuard';
 
@@ -23,9 +24,11 @@ function App() {
           <Route path="boats/create" element={<CreateBoat />} />
           <Route path="boats/search" element={<SearchBoats />} />
           <Route path="boats/:id/edit" element={<CreateBoat />} />
+          <Route path="crew" element={<Crew />} />
         </Route>
 
         <Route path="profile" element={<Profile />} />
+        <Route path="profile/:id" element={<Profile />} />
         {/* Add more routes here */}
         <Route path="*" element={<div>Not Found</div>} />
       </Route>

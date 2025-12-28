@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth0 } from "@auth0/auth0-react";
+import { useParams } from 'react-router-dom';
 import Header from '../components/layout/Header';
 import { profile, setAuthToken } from '../services/api';
 import { useProfile } from '../context/ProfileContext';
@@ -59,6 +60,7 @@ const US_STATES = [
 
 const Profile = () => {
     const { user, getAccessTokenSilently } = useAuth0();
+    const { id } = useParams(); // Get profile ID from URL if present
     const [profileData, setProfileData] = useState(null);
     const [loading, setLoading] = useState(true);
     const [isEditing, setIsEditing] = useState(false);
@@ -72,35 +74,57 @@ const Profile = () => {
         image: ''
     });
 
-
-
     const { profileData: contextProfile, updateProfileState } = useProfile();
 
+    // Determine if we are viewing another user's profile
+    const isReadOnly = !!id && parseInt(id) !== contextProfile?.id;
+
     useEffect(() => {
-        if (contextProfile) {
-            setProfileData(contextProfile);
-            setFormData(prev => ({
-                ...prev,
-                name: contextProfile.name || '',
-                phone: contextProfile.phone || '',
-                address: contextProfile.address || '',
-                city: contextProfile.city || '',
-                state: contextProfile.state || '',
-                zip: contextProfile.zip || '',
-                image: contextProfile.image || ''
-            }));
-            setLoading(false);
-        } else if (contextProfile === null && user) {
-            // Profile doesn't exist yet, but context is loaded
-            setProfileData(null);
-            setFormData(prev => ({
-                ...prev,
-                name: user.name || '',
-            }));
-            setIsEditing(true);
-            setLoading(false);
-        }
-    }, [contextProfile, user]);
+        const loadProfile = async () => {
+            if (id) {
+                // Fetch specific profile
+                try {
+                    setLoading(true);
+                    const token = await getAccessTokenSilently();
+                    setAuthToken(token);
+                    const res = await profile.get(id);
+                    setProfileData(res.data);
+                    setIsEditing(false); // Disable editing if viewing another user
+                    setLoading(false);
+                } catch (error) {
+                    console.error("Error fetching profile:", error);
+                    setLoading(false);
+                }
+            } else {
+                // Use current user profile from context
+                if (contextProfile) {
+                    setProfileData(contextProfile);
+                    setFormData(prev => ({
+                        ...prev,
+                        name: contextProfile.name || '',
+                        phone: contextProfile.phone || '',
+                        address: contextProfile.address || '',
+                        city: contextProfile.city || '',
+                        state: contextProfile.state || '',
+                        zip: contextProfile.zip || '',
+                        image: contextProfile.image || ''
+                    }));
+                    setLoading(false);
+                } else if (contextProfile === null && user) {
+                    // Profile doesn't exist yet for current user
+                    setProfileData(null);
+                    setFormData(prev => ({
+                        ...prev,
+                        name: user.name || '',
+                    }));
+                    setIsEditing(true);
+                    setLoading(false);
+                }
+            }
+        };
+
+        loadProfile();
+    }, [id, contextProfile, user, getAccessTokenSilently]);
 
     // Format phone number
     const formatPhoneNumber = (value) => {
@@ -355,7 +379,7 @@ const Profile = () => {
 
                             <div className="shrink-0 ml-4">
                                 <div>
-                                    {!isEditing && (
+                                    {!isEditing && !isReadOnly && (
                                         <button
                                             onClick={() => {
                                                 setFormData({

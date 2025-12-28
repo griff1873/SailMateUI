@@ -14,6 +14,7 @@ const Dashboard = () => {
     const [boats, setBoats] = useState([]);
     const [upcomingEvents, setUpcomingEvents] = useState([]);
     const [pendingRequests, setPendingRequests] = useState([]);
+    const [invitations, setInvitations] = useState([]);
     const [myEventStatuses, setMyEventStatuses] = useState([]); // Map of eventId -> status
     const [loading, setLoading] = useState(true);
 
@@ -27,12 +28,20 @@ const Dashboard = () => {
                 const boatsRes = await boatsService.getByProfile(profileData.id);
                 setBoats(boatsRes.data);
 
-                // Fetch pending requests
+                // Fetch pending requests (people wanting to join my boats)
                 try {
                     const requestsRes = await boatCrew.getPendingRequests(profileData.id);
                     setPendingRequests(requestsRes.data);
                 } catch (err) {
                     console.error("Error fetching pending requests:", err);
+                }
+
+                // Fetch invitations (me invited to other boats)
+                try {
+                    const invitesRes = await boatCrew.getInvitations(profileData.id);
+                    setInvitations(invitesRes.data);
+                } catch (err) {
+                    console.error("Error fetching invitations:", err);
                 }
 
                 // Fetch upcoming events
@@ -104,6 +113,38 @@ const Dashboard = () => {
             } catch (error) {
                 console.error("Error declining request:", error);
                 alert("Failed to decline request.");
+            }
+        }
+    };
+
+    const handleAcceptInvitation = async (invite) => {
+        try {
+            const token = await getAccessTokenSilently();
+            setAuthToken(token);
+            await boatCrew.update(invite.id, {
+                id: invite.id,
+                boatId: invite.boatId,
+                profileId: invite.profileId,
+                status: 'A',
+                isAdmin: invite.isAdmin || false
+            });
+            fetchData();
+        } catch (error) {
+            console.error("Error accepting invitation:", error);
+            alert("Failed to accept invitation.");
+        }
+    };
+
+    const handleDeclineInvitation = async (inviteId) => {
+        if (confirm("Are you sure you want to decline this invitation?")) {
+            try {
+                const token = await getAccessTokenSilently();
+                setAuthToken(token);
+                await boatCrew.delete(inviteId);
+                fetchData();
+            } catch (error) {
+                console.error("Error declining invitation:", error);
+                alert("Failed to decline invitation.");
             }
         }
     };
@@ -203,6 +244,7 @@ const Dashboard = () => {
                                 <div key={boat.id} className="snap-start shrink-0 w-[300px]">
                                     <BoatCard
                                         boat={boat}
+                                        isOwner={true}
                                         onEdit={(id) => navigate(`/boats/${id}/edit`)}
                                         onDelete={async (id) => {
                                             if (confirm("Are you sure you want to delete this boat?")) {
@@ -274,8 +316,6 @@ const Dashboard = () => {
                                                         const desired = event.desiredCrew || 0;
                                                         const max = event.maxCrew || 0;
 
-                                                        // "if values are 0 show counts in blue"
-                                                        // Assuming this means if no constraints are set
                                                         const noConstraints = min === 0 && desired === 0 && max === 0;
 
                                                         let colorClass = "text-skipper-neutral-text dark:text-gray-300"; // Default
@@ -285,21 +325,9 @@ const Dashboard = () => {
                                                         } else if (confirmed < min) {
                                                             colorClass = "text-status-red";
                                                         } else if (confirmed >= desired && (max === 0 || confirmed <= max)) {
-                                                            // "Green if between desired and max"
                                                             colorClass = "text-status-green";
-                                                        } else {
-                                                            // Between min and desired, or over max?
-                                                            // If over max, arguably red, but requirements didn't specify.
-                                                            // If between min and desired, arguably yellow or default.
-                                                            // Let's stick to default or maybe yellow/orange for "warning".
-                                                            // Requirement: "red if under min", "green if between desired and max".
-                                                            // Implies everything else is default or not mentioned.
-                                                            // I'll keep default for now.
                                                         }
 
-                                                        // "total number crew confirmed/desired/max"
-                                                        // Update: "for the 2nd the min valu from event"
-                                                        // Update: "hover tooltips"
                                                         return (
                                                             <div className={`font-bold ${colorClass} flex justify-end gap-1 cursor-default`}>
                                                                 <span title="Confirmed">{confirmed}</span>
@@ -355,51 +383,100 @@ const Dashboard = () => {
                     </div>
                 </div>
 
-                {/* Right Column - Pending Crew Requests */}
+                {/* Right Column - Inbox */}
                 <div className="lg:col-span-1">
                     <div className="bg-white dark:bg-background-dark p-6 rounded-xl shadow-sm sticky top-10">
-                        <h2 className="text-skipper-neutral-text dark:text-gray-200 text-2xl font-bold leading-tight tracking-[-0.015em] mb-4">Pending Crew Requests</h2>
-                        <div className="flex flex-col gap-5">
-                            {pendingRequests.length === 0 ? (
+                        <h2 className="text-skipper-neutral-text dark:text-gray-200 text-2xl font-bold leading-tight tracking-[-0.015em] mb-4">Inbox</h2>
+
+                        <div className="flex flex-col gap-6">
+                            {pendingRequests.length === 0 && invitations.length === 0 ? (
                                 <div className="text-center p-8 border border-dashed border-gray-200 dark:border-gray-700 rounded-lg">
                                     <div className="w-12 h-12 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-3">
                                         <span className="material-symbols-outlined text-gray-400 dark:text-gray-500">inbox</span>
                                     </div>
-                                    <p className="text-gray-500 dark:text-gray-400 text-sm">No pending requests</p>
+                                    <p className="text-gray-500 dark:text-gray-400 text-sm">No new notifications</p>
                                 </div>
                             ) : (
-                                pendingRequests.map(request => (
-                                    <div key={request.id} className="flex items-start gap-4">
-                                        <div
-                                            className="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-10 mt-1"
-                                            style={{ backgroundImage: `url("${request.profile.image || ''}")` }}
-                                        >
-                                            {!request.profile.image && (
-                                                <div className="w-full h-full rounded-full bg-skipper-primary flex items-center justify-center text-white text-xs font-bold">
-                                                    {(request.profile.name || '??').substring(0, 2).toUpperCase()}
+                                <>
+                                    {/* Requests to Join */}
+                                    {pendingRequests.length > 0 && (
+                                        <div className="flex flex-col gap-4">
+                                            <h3 className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Requests to Join</h3>
+                                            {pendingRequests.map(request => (
+                                                <div key={request.id} className="flex items-start gap-4">
+                                                    <div
+                                                        className="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-10 mt-1"
+                                                        style={{ backgroundImage: `url("${request.profile.image || ''}")` }}
+                                                    >
+                                                        {!request.profile.image && (
+                                                            <div className="w-full h-full rounded-full bg-skipper-primary flex items-center justify-center text-white text-xs font-bold">
+                                                                {(request.profile.name || '??').substring(0, 2).toUpperCase()}
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                    <div className="flex-grow">
+                                                        <p className="text-skipper-neutral-text dark:text-white font-medium">{request.profile.name}</p>
+                                                        <p className="text-gray-500 dark:text-gray-400 text-sm">Wants to join <span className="font-semibold text-skipper-primary dark:text-primary/90">{request.boat.name}</span></p>
+                                                        <div className="flex items-center gap-2 mt-2">
+                                                            <button
+                                                                onClick={() => handleAcceptRequest(request.id, request.boatId, request.profileId)}
+                                                                className="flex-1 text-sm font-bold text-white bg-skipper-success hover:bg-skipper-success/90 h-8 rounded-md transition-colors"
+                                                            >
+                                                                Approve
+                                                            </button>
+                                                            <button
+                                                                onClick={() => handleDeclineRequest(request.id)}
+                                                                className="flex-1 text-sm font-bold text-gray-700 dark:text-gray-300 bg-gray-200 dark:bg-white/10 hover:bg-gray-300 dark:hover:bg-white/20 h-8 rounded-md transition-colors"
+                                                            >
+                                                                Decline
+                                                            </button>
+                                                        </div>
+                                                    </div>
                                                 </div>
-                                            )}
+                                            ))}
                                         </div>
-                                        <div className="flex-grow">
-                                            <p className="text-skipper-neutral-text dark:text-white font-medium">{request.profile.name}</p>
-                                            <p className="text-gray-500 dark:text-gray-400 text-sm">Wants to join <span className="font-semibold text-skipper-primary dark:text-primary/90">{request.boat.name}</span></p>
-                                            <div className="flex items-center gap-2 mt-2">
-                                                <button
-                                                    onClick={() => handleAcceptRequest(request.id, request.boatId, request.profileId)}
-                                                    className="flex-1 text-sm font-bold text-white bg-skipper-success hover:bg-skipper-success/90 h-8 rounded-md transition-colors"
-                                                >
-                                                    Approve
-                                                </button>
-                                                <button
-                                                    onClick={() => handleDeclineRequest(request.id)}
-                                                    className="flex-1 text-sm font-bold text-gray-700 dark:text-gray-300 bg-gray-200 dark:bg-white/10 hover:bg-gray-300 dark:hover:bg-white/20 h-8 rounded-md transition-colors"
-                                                >
-                                                    Decline
-                                                </button>
-                                            </div>
+                                    )}
+
+                                    {/* Invitations */}
+                                    {invitations.length > 0 && (
+                                        <div className="flex flex-col gap-4">
+                                            {pendingRequests.length > 0 && <hr className="border-gray-100 dark:border-gray-800" />}
+                                            <h3 className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Invitations</h3>
+                                            {invitations.map(invite => (
+                                                <div key={invite.id} className="flex flex-col gap-3 p-4 border border-gray-100 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-white/5">
+                                                    <div className="flex items-center gap-3">
+                                                        <div className="w-10 h-10 rounded-full bg-skipper-primary text-white flex items-center justify-center font-bold text-sm shrink-0">
+                                                            {(invite.boat.name || '?').substring(0, 2).toUpperCase()}
+                                                        </div>
+                                                        <div>
+                                                            <p className="text-skipper-neutral-text dark:text-white text-sm">
+                                                                Invited to join <span className="font-bold">{invite.boat.name}</span>
+                                                            </p>
+                                                            <p className="text-gray-500 dark:text-gray-400 text-xs">
+                                                                by {invite.boat.profile?.name || 'Owner'}
+                                                            </p>
+                                                        </div>
+                                                    </div>
+
+                                                    <div className="flex gap-2">
+                                                        <button
+                                                            onClick={() => handleAcceptInvitation(invite)}
+                                                            className="flex-1 px-3 py-1.5 bg-skipper-success text-white text-sm font-bold rounded hover:bg-skipper-success/90 transition-colors"
+                                                        >
+                                                            Accept
+                                                        </button>
+                                                        <button
+                                                            onClick={() => handleDeclineInvitation(invite.id)}
+                                                            className="flex-1 px-3 py-1.5 bg-gray-200 text-gray-700 dark:bg-gray-700 dark:text-gray-300 text-sm font-bold rounded hover:bg-gray-300 transition-colors"
+                                                        >
+                                                            Decline
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            ))}
                                         </div>
-                                    </div>
-                                ))
+                                    )}
+                                </>
                             )}
                         </div>
                     </div>

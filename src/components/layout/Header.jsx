@@ -2,7 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth0 } from "@auth0/auth0-react";
 
-const Header = ({ title, showCreateButton = false }) => {
+const Header = ({ title, showCreateButton = false, rightAction = null }) => {
     const { user } = useAuth0();
     return (
         <header className="flex flex-wrap justify-between items-center gap-4 mb-8">
@@ -17,6 +17,11 @@ const Header = ({ title, showCreateButton = false }) => {
                         <span className="material-symbols-outlined !text-xl mr-2">add</span>
                         <span className="truncate">Create New Event</span>
                     </Link>
+                </div>
+            )}
+            {rightAction && (
+                <div className="flex items-center gap-4">
+                    {rightAction}
                 </div>
             )}
         </header>

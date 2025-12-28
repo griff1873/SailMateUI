@@ -46,6 +46,8 @@ export const boatCrew = {
     getByProfile: (profileId) => api.get(`/BoatCrew/by-profile/${profileId}`),
     getPendingRequests: (profileId) => api.get(`/BoatCrew/pending-requests/${profileId}`),
     getAdminsByBoat: (boatId) => api.get(`/BoatCrew/admins/by-boat/${boatId}`),
+    getMyCrew: (profileId) => api.get(`/BoatCrew/my-crew/${profileId}`),
+    getInvitations: (profileId) => api.get(`/BoatCrew/invitations/${profileId}`),
 };
 
 export const boats = {
@@ -101,6 +103,7 @@ export const profile = {
     delete: (id) => api.delete(`/Profile/${id}`),
     searchByEmail: (email) => api.get('/Profile/search/by-email', { params: { email } }),
     searchExactEmail: (email) => api.get('/Profile/search/exact-email', { params: { email } }),
+    search: (query) => api.get('/Profile/search', { params: { query } }),
     getByEmail: (email) => api.get(`/Profile/by-email/${email}`),
 };
 
