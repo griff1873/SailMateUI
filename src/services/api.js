@@ -59,7 +59,6 @@ export const boats = {
     delete: (id) => api.delete(`/Boats/${id}`),
     getByProfile: (profileId) => api.get(`/Boats/by-profile/${profileId}`),
     getSchedules: (id) => api.get(`/Boats/${id}/schedules`),
-    search: (params) => api.get('/Boats/search', { params }), // name, profileId
     searchAll: (name, excludeProfileId) =>
         api.get(`/Boats/search-all`, {
             params: {
@@ -67,6 +66,7 @@ export const boats = {
                 excludeProfileId
             }
         }),
+    setCrewColor: (id, data) => api.put(`/Boats/${id}/crew-color`, data),
 };
 
 export const events = {

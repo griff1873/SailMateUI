@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState, Fragment } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth0 } from "@auth0/auth0-react";
 import Header from '../components/layout/Header';
@@ -114,6 +114,26 @@ const Dashboard = () => {
                 console.error("Error declining request:", error);
                 alert("Failed to decline request.");
             }
+        }
+    };
+
+    const handleCrewColorChange = async (boatId, newColor) => {
+        // Optimistic update
+        setBoats(prev => prev.map(b => b.id === boatId ? { ...b, calendarColor: newColor } : b));
+
+        try {
+            const token = await getAccessTokenSilently();
+            setAuthToken(token);
+            await boatsService.setCrewColor(boatId, {
+                profileId: profileData.id,
+                color: newColor
+            });
+            // No need to fetch data again if optimistic update works, but harmless to leave it
+        } catch (error) {
+            console.error("Error setting crew color:", error);
+            // Revert on failure
+            fetchData();
+            alert("Failed to update color.");
         }
     };
 
@@ -244,7 +264,8 @@ const Dashboard = () => {
                                 <div key={boat.id} className="snap-start shrink-0 w-[300px]">
                                     <BoatCard
                                         boat={boat}
-                                        isOwner={true}
+                                        isOwner={boat.profileId === profileData.id}
+                                        onColorChange={handleCrewColorChange}
                                         onEdit={(id) => navigate(`/boats/${id}/edit`)}
                                         onDelete={async (id) => {
                                             if (confirm("Are you sure you want to delete this boat?")) {
@@ -271,7 +292,7 @@ const Dashboard = () => {
                         <div className="flex flex-col gap-4">
                             {upcomingEvents.length > 0 ? (
                                 upcomingEvents.map((event, index) => (
-                                    <React.Fragment key={event.id}>
+                                    <Fragment key={event.id}>
                                         <div
                                             onClick={() => navigate(`/events/${event.id}/edit`)}
                                             className="flex flex-wrap items-center justify-between gap-4 p-4 rounded-lg hover:bg-gray-50 dark:hover:bg-white/5 transition-colors cursor-pointer"
@@ -374,7 +395,7 @@ const Dashboard = () => {
                                             </div>
                                         </div>
                                         {index < upcomingEvents.length - 1 && <hr className="border-gray-100 dark:border-gray-800" />}
-                                    </React.Fragment>
+                                    </Fragment>
                                 ))
                             ) : (
                                 <p className="text-gray-500 text-center py-4">No upcoming events found.</p>

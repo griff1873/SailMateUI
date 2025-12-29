@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth0 } from "@auth0/auth0-react";
 // Header import removed as we are implementing custom header for this layout
@@ -129,9 +129,15 @@ const Events = () => {
                                         <div className="flex items-center gap-4 text-sm text-gray-600 dark:text-gray-300">
                                             <div className="flex items-center gap-1.5">
                                                 <span className="material-symbols-outlined text-[18px]">sailing</span>
-                                                <span className="font-medium bg-gray-50 dark:bg-white/10 px-2 py-0.5 rounded">
-                                                    {event.boat?.name || 'Unknown Boat'}
-                                                </span>
+                                                <div className="flex items-center gap-2 bg-gray-50 dark:bg-white/10 px-2 py-0.5 rounded">
+                                                    <div
+                                                        className="w-2.5 h-2.5 rounded-full"
+                                                        style={{ backgroundColor: event.calendarColor || event.boat?.calendarColor || '#3B82F6' }}
+                                                    ></div>
+                                                    <span className="font-medium">
+                                                        {event.boat?.name || 'Unknown Boat'}
+                                                    </span>
+                                                </div>
                                             </div>
                                             <div className="flex items-center gap-1.5">
                                                 <span className="material-symbols-outlined text-[18px]">schedule</span>

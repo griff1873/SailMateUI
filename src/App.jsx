@@ -1,4 +1,4 @@
-import React from 'react';
+
 import { Routes, Route } from 'react-router-dom';
 import MainLayout from './components/layout/MainLayout';
 import Dashboard from './pages/Dashboard';
@@ -8,7 +8,8 @@ import CreateBoat from './pages/CreateBoat';
 import SearchBoats from './pages/SearchBoats';
 import Profile from './pages/Profile';
 import Crew from './pages/Crew';
-import Events from './pages/Events'; // Added this import
+import Events from './pages/Events';
+import Calendar from './pages/Calendar'; // Added this import
 import { AuthenticationGuard } from './auth/AuthenticationGuard';
 import ProfileGuard from './auth/ProfileGuard';
 
@@ -20,6 +21,7 @@ function App() {
         <Route element={<ProfileGuard />}>
           <Route path="/" element={<Dashboard />} />
           <Route path="/events" element={<Events />} />
+          <Route path="/calendar" element={<Calendar />} />
           <Route path="events/create" element={<CreateEvent />} />
           <Route path="events/:id/edit" element={<CreateEvent />} />
 

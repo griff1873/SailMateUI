@@ -1,4 +1,4 @@
-import React from 'react';
+
 import { NavLink } from 'react-router-dom';
 import { useAuth0 } from "@auth0/auth0-react";
 
@@ -6,7 +6,7 @@ import { useProfile } from '../../context/ProfileContext';
 
 const Sidebar = () => {
     const { user, logout } = useAuth0();
-    const { profileData } = useProfile();
+    const { profileData, isBoatAdmin } = useProfile();
 
     // Use profile data if available, otherwise fall back to Auth0 user data
     const displayName = profileData?.name || user?.name;
@@ -28,7 +28,8 @@ const Sidebar = () => {
         { name: 'Dashboard', icon: 'dashboard', path: '/' },
         { name: 'My Boats', icon: 'sailing', path: '/boats' },
         { name: 'Events', icon: 'event', path: '/events' },
-        { name: 'Crew', icon: 'group', path: '/crew' },
+        { name: 'Calendar', icon: 'calendar_month', path: '/calendar' },
+        ...(isBoatAdmin ? [{ name: 'Crew', icon: 'group', path: '/crew' }] : []),
         { name: 'Settings', icon: 'settings', path: '/settings' },
     ];
 

@@ -1,4 +1,4 @@
-import React from 'react'
+import { StrictMode } from 'react'
 import ReactDOM from 'react-dom/client'
 import { BrowserRouter } from 'react-router-dom';
 import App from './App.jsx'
@@ -8,7 +8,7 @@ import Auth0ProviderWithHistory from './auth/Auth0ProviderWithHistory';
 import { ProfileProvider } from './context/ProfileContext';
 
 ReactDOM.createRoot(document.getElementById('root')).render(
-  <React.StrictMode>
+  <StrictMode>
     <BrowserRouter>
       <Auth0ProviderWithHistory>
         <ProfileProvider>
@@ -16,5 +16,5 @@ ReactDOM.createRoot(document.getElementById('root')).render(
         </ProfileProvider>
       </Auth0ProviderWithHistory>
     </BrowserRouter>
-  </React.StrictMode>,
+  </StrictMode>,
 )

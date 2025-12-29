@@ -1,6 +1,6 @@
-import React from 'react';
 
-const BoatCard = ({ boat, onEdit, onDelete, isOwner = false }) => {
+
+const BoatCard = ({ boat, onEdit, onDelete, onColorChange, isOwner = false }) => {
     let initial = "";
     if (boat.shortName && boat.shortName.trim().length > 0) {
         initial = boat.shortName.trim().toUpperCase();
@@ -37,7 +37,7 @@ const BoatCard = ({ boat, onEdit, onDelete, isOwner = false }) => {
                         <p className="text-gray-500 dark:text-gray-400 text-sm font-normal leading-normal">{boat.make} {boat.model}</p>
                     </div>
                 </div>
-                {isOwner && (
+                {isOwner ? (
                     <div className="flex items-center gap-2 mt-4">
                         <button
                             onClick={() => onEdit(boat.id)}
@@ -51,6 +51,19 @@ const BoatCard = ({ boat, onEdit, onDelete, isOwner = false }) => {
                         >
                             <span className="material-symbols-outlined text-lg">delete</span>
                         </button>
+                    </div>
+                ) : (
+                    <div className="flex items-center gap-2 mt-4">
+                        <label className="flex-1 flex cursor-pointer items-center justify-center gap-2 overflow-hidden rounded-lg h-10 px-4 bg-gray-50 dark:bg-white/5 text-gray-600 dark:text-gray-400 text-sm font-bold hover:bg-gray-100 dark:hover:bg-white/10 transition-colors">
+                            <span className="material-symbols-outlined text-lg">palette</span>
+                            <span>Set Color</span>
+                            <input
+                                type="color"
+                                className="sr-only"
+                                value={boat.calendarColor || '#3B82F6'}
+                                onChange={(e) => onColorChange && onColorChange(boat.id, e.target.value)}
+                            />
+                        </label>
                     </div>
                 )}
             </div>
