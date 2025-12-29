@@ -76,6 +76,7 @@ export const events = {
     update: (id, data) => api.put(`/Events/${id}`, data),
     delete: (id) => api.delete(`/Events/${id}`),
     getUpcoming: (params) => api.get('/Events/upcoming', { params }), // days, boatIds[]
+    getMyEvents: (params) => api.get('/Events/my-events', { params }), // { profileId, includePast }
     search: (params) => api.get('/Events/search', { params }), // name, location, startDate, endDate
 };
 

@@ -8,6 +8,7 @@ import CreateBoat from './pages/CreateBoat';
 import SearchBoats from './pages/SearchBoats';
 import Profile from './pages/Profile';
 import Crew from './pages/Crew';
+import Events from './pages/Events'; // Added this import
 import { AuthenticationGuard } from './auth/AuthenticationGuard';
 import ProfileGuard from './auth/ProfileGuard';
 
@@ -17,7 +18,8 @@ function App() {
       <Route path="/welcome" element={<Welcome />} />
       <Route path="/" element={<AuthenticationGuard component={MainLayout} />}>
         <Route element={<ProfileGuard />}>
-          <Route index element={<Dashboard />} />
+          <Route path="/" element={<Dashboard />} />
+          <Route path="/events" element={<Events />} />
           <Route path="events/create" element={<CreateEvent />} />
           <Route path="events/:id/edit" element={<CreateEvent />} />
 
