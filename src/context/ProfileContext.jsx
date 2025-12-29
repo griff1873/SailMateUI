@@ -39,17 +39,6 @@ export const ProfileProvider = ({ children }) => {
                         const activeAvailableCrew = crew.filter(c => c.boat && !c.boat.isDeleted);
                         const adminCrew = activeAvailableCrew.filter(c => c.isAdmin && !c.isDeleted && c.status === 'A');
 
-                        console.log("DEBUG ProfileContext:");
-                        console.log("Owned Boats Count (Filtered):", owned.length);
-                        if (owned.length > 0) console.log("Owned Boat Names:", owned.map(b => b.name));
-
-                        console.log("All Crew Memberships:", crew);
-                        console.log("Active Available Crew:", activeAvailableCrew);
-                        console.log("Admin Crew Count (Accepted & Active Boat):", adminCrew.length);
-                        if (adminCrew.length > 0) console.log("Admin Crew Boat IDs:", adminCrew.map(c => c.boatId));
-
-                        console.log("Is Boat Admin:", owned.length > 0 || adminCrew.length > 0);
-
                         setOwnedBoats(owned);
                         setIsBoatAdmin(owned.length > 0 || adminCrew.length > 0);
                     } catch (err) {

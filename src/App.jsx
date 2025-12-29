@@ -9,7 +9,8 @@ import SearchBoats from './pages/SearchBoats';
 import Profile from './pages/Profile';
 import Crew from './pages/Crew';
 import Events from './pages/Events';
-import Calendar from './pages/Calendar'; // Added this import
+import Calendar from './pages/Calendar';
+import MyBoats from './pages/MyBoats';
 import { AuthenticationGuard } from './auth/AuthenticationGuard';
 import ProfileGuard from './auth/ProfileGuard';
 
@@ -28,6 +29,7 @@ function App() {
           <Route path="boats/create" element={<CreateBoat />} />
           <Route path="boats/search" element={<SearchBoats />} />
           <Route path="boats/:id/edit" element={<CreateBoat />} />
+          <Route path="/boats" element={<MyBoats />} />
           <Route path="crew" element={<Crew />} />
         </Route>
 
