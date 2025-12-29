@@ -9,9 +9,13 @@ RUN npm ci
 # Copy source
 COPY . .
 
-# Build the app
-# Note: Ensure VITE_API_URL and other env vars are available at build time if needed, 
-# or use a runtime config solution. For now, we assume standard build.
+# Build Arguments for Auth0 and API configuration
+ARG VITE_API_URL=https://sailmateapi-692264879690.us-central1.run.app/api
+ARG VITE_AUTH0_DOMAIN=dev-026304zu6k5d8hlc.us.auth0.com
+ARG VITE_AUTH0_CLIENT_ID=026304zu6k5d8hlc
+ARG VITE_AUTH0_AUDIENCE=https://sailmateui-692264879690.us-central1.run.app
+
+# Note: Vite validates that only VITE_ prefixed variables are exposed to the client
 RUN npm run build
 
 # Production Stage
