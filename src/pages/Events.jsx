@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth0 } from "@auth0/auth0-react";
 // Header import removed as we are implementing custom header for this layout
-import { events as eventsService, setAuthToken } from '../services/api';
+import { events as eventsService, crewEvent, setAuthToken } from '../services/api';
 import { useProfile } from '../context/ProfileContext';
 
 const Events = () => {
@@ -40,18 +40,62 @@ const Events = () => {
         fetchEvents();
     }, [profileData, getAccessTokenSilently, showPast]);
 
-    const getStatusBadge = (status) => {
-        switch (status) {
-            case 'In':
-                return <span className="px-2 py-1 rounded text-xs font-bold bg-status-green text-white">Going</span>;
-            case 'Maybe':
-                return <span className="px-2 py-1 rounded text-xs font-bold bg-status-orange text-white">Maybe</span>;
-            case 'Out':
-                return <span className="px-2 py-1 rounded text-xs font-bold bg-status-red text-white">Not Going</span>;
-            case 'Invited': // Special case handled by query, but fallback logic here
-                return <span className="px-2 py-1 rounded text-xs font-bold bg-gray-200 text-gray-600 dark:bg-gray-700 dark:text-gray-300">Invited</span>;
-            default:
-                return <span className="px-2 py-1 rounded text-xs font-bold bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400">Pending</span>;
+    const handleEventStatusUpdate = async (event, newStatus, e) => {
+        if (e) e.stopPropagation(); // Prevent card click
+
+        // Handle potential casing issues from API (MyCrewEventId vs myCrewEventId)
+        const existingCrewEventId = event.myCrewEventId || event.MyCrewEventId;
+
+        console.log("DEBUG: Status Update", {
+            eventId: event.id,
+            existingCrewEventId,
+            rawMyCrewEventId: event.myCrewEventId,
+            rawMyCrewEventIdPascal: event.MyCrewEventId,
+            newStatus
+        });
+
+        try {
+            const token = await getAccessTokenSilently();
+            setAuthToken(token);
+
+            const currentStatus = event.myStatus;
+
+            // Optimistic Update
+            setEvents(prev => prev.map(ev => {
+                if (ev.id === event.id) {
+                    let newCrewCount = ev.crewCount || 0;
+                    if (newStatus === 'In' && currentStatus !== 'In') {
+                        newCrewCount++;
+                    } else if (currentStatus === 'In' && newStatus !== 'In') {
+                        newCrewCount = Math.max(0, newCrewCount - 1);
+                    }
+                    return { ...ev, myStatus: newStatus, crewCount: newCrewCount };
+                }
+                return ev;
+            }));
+
+            if (existingCrewEventId) {
+                console.log("DEBUG: Updating existing CrewEvent", existingCrewEventId);
+                // Update existing
+                await crewEvent.update(existingCrewEventId, { status: newStatus });
+            } else {
+                console.log("DEBUG: Creating new CrewEvent");
+                // Create new
+                const res = await crewEvent.create({
+                    eventId: event.id,
+                    profileId: profileData.id,
+                    status: newStatus
+                });
+                console.log("DEBUG: Created CrewEvent", res.data);
+
+                // Update state with new ID to prevent multiple creates
+                setEvents(prev => prev.map(ev =>
+                    ev.id === event.id ? { ...ev, myCrewEventId: res.data.id } : ev
+                ));
+            }
+        } catch (err) {
+            console.error("Error updating status:", err);
+            // Revert could be implemented here by re-fetching
         }
     };
 
@@ -123,7 +167,31 @@ const Events = () => {
                                             <h3 className="text-lg font-bold text-skipper-neutral-text dark:text-white line-clamp-1">
                                                 {event.name}
                                             </h3>
-                                            {getStatusBadge(event.myStatus)}
+
+                                            {/* Status Buttons */}
+                                            <div className="flex bg-gray-100 dark:bg-gray-800 rounded-lg p-1 ml-2" onClick={(e) => e.stopPropagation()}>
+                                                <button
+                                                    onClick={(e) => handleEventStatusUpdate(event, 'In', e)}
+                                                    className={`px-3 py-1 text-xs font-bold rounded ${event.myStatus === 'In' ? 'bg-status-green text-white shadow-sm' : 'text-gray-500 hover:text-status-green'}`}
+                                                    title="I'm In"
+                                                >
+                                                    In
+                                                </button>
+                                                <button
+                                                    onClick={(e) => handleEventStatusUpdate(event, 'Maybe', e)}
+                                                    className={`px-3 py-1 text-xs font-bold rounded ${event.myStatus === 'Maybe' ? 'bg-status-orange text-white shadow-sm' : 'text-gray-500 hover:text-status-orange'}`}
+                                                    title="Maybe"
+                                                >
+                                                    ?
+                                                </button>
+                                                <button
+                                                    onClick={(e) => handleEventStatusUpdate(event, 'Out', e)}
+                                                    className={`px-3 py-1 text-xs font-bold rounded ${event.myStatus === 'Out' ? 'bg-status-red text-white shadow-sm' : 'text-gray-500 hover:text-status-red'}`}
+                                                    title="I'm Out"
+                                                >
+                                                    Out
+                                                </button>
+                                            </div>
                                         </div>
 
                                         <div className="flex items-center gap-4 text-sm text-gray-600 dark:text-gray-300">
