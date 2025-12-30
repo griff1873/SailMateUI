@@ -13,8 +13,7 @@ COPY . .
 ARG VITE_API_URL=https://sailmateapi-692264879690.us-central1.run.app/api
 ARG VITE_AUTH0_DOMAIN=dev-026304zu6k5d8hlc.us.auth0.com
 ARG VITE_AUTH0_CLIENT_ID=H9kXZemWnJRJyvbD7kHVfU3ND9oafLW4
-ARG VITE_AUTH0_AUDIENCE=https://sailmateapi-692264879690.us-central1.run.app/api
-
+ARG VITE_AUTH0_AUDIENCE=http://localhost:5000/api
 # Note: Vite validates that only VITE_ prefixed variables are exposed to the client
 RUN npm run build
 
