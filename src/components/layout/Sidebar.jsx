@@ -4,7 +4,7 @@ import { useAuth0 } from "@auth0/auth0-react";
 
 import { useProfile } from '../../context/ProfileContext';
 
-const Sidebar = () => {
+const Sidebar = ({ mobileOpen, setMobileOpen }) => {
     const { user, logout } = useAuth0();
     const { profileData, isBoatAdmin } = useProfile();
 
@@ -34,19 +34,37 @@ const Sidebar = () => {
     ];
 
     return (
-        <aside className="flex-col bg-white dark:bg-background-dark border-r border-gray-200 dark:border-gray-800 w-64 p-4 sticky top-0 h-screen hidden lg:flex">
-            <div className="flex items-center gap-3 mb-8">
-                <div className="text-white bg-skipper-primary p-2 rounded-lg">
-                    <span className="material-symbols-outlined !text-2xl">anchor</span>
+        <aside
+            className={`
+                flex flex-col bg-white dark:bg-background-dark border-r border-gray-200 dark:border-gray-800 w-64 p-4 
+                fixed top-0 bottom-0 z-50 transition-transform duration-300 ease-in-out
+                lg:static lg:h-screen lg:translate-x-0
+                ${mobileOpen ? 'translate-x-0' : '-translate-x-full'}
+            `}
+        >
+            <div className="flex items-center justify-between mb-8">
+                <div className="flex items-center gap-3">
+                    <div className="text-white bg-skipper-primary p-2 rounded-lg">
+                        <span className="material-symbols-outlined !text-2xl">anchor</span>
+                    </div>
+                    <h1 className="text-skipper-neutral-text dark:text-white text-xl font-bold leading-normal">SailMate</h1>
                 </div>
-                <h1 className="text-skipper-neutral-text dark:text-white text-xl font-bold leading-normal">SailMate</h1>
+                {/* Close Button Mobile */}
+                <button
+                    onClick={() => setMobileOpen(false)}
+                    className="lg:hidden p-1 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-white"
+                >
+                    <span className="material-symbols-outlined">close</span>
+                </button>
             </div>
+
             <div className="flex flex-col justify-between flex-grow">
                 <nav className="flex flex-col gap-2">
                     {navItems.map((item) => (
                         <NavLink
                             key={item.name}
                             to={item.path}
+                            onClick={() => setMobileOpen(false)} // Close on nav click
                             className={({ isActive }) =>
                                 `flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${isActive
                                     ? 'bg-primary/10 text-primary'
@@ -62,6 +80,7 @@ const Sidebar = () => {
                 <div className="flex flex-col gap-4">
                     <NavLink
                         to="/profile"
+                        onClick={() => setMobileOpen(false)}
                         className="flex items-center gap-3 p-2 -mx-2 rounded-lg hover:bg-gray-100 dark:hover:bg-white/10 transition-colors group"
                     >
                         {displayImage ? (
