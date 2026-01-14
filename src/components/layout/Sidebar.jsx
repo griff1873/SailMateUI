@@ -1,12 +1,33 @@
 
 import { NavLink } from 'react-router-dom';
 import { useAuth0 } from "@auth0/auth0-react";
+import { useState, useEffect } from 'react';
+import { messages } from '../../services/api';
 
 import { useProfile } from '../../context/ProfileContext';
 
 const Sidebar = ({ mobileOpen, setMobileOpen }) => {
     const { user, logout } = useAuth0();
     const { profileData, isBoatAdmin } = useProfile();
+    const [unreadCount, setUnreadCount] = useState(0);
+
+    useEffect(() => {
+        const fetchUnreadCount = async () => {
+            if (profileData?.id) {
+                try {
+                    const res = await messages.getUnreadCount(profileData.id);
+                    setUnreadCount(res.data.count);
+                } catch (error) {
+                    console.error("Error fetching unread count", error);
+                }
+            }
+        };
+
+        fetchUnreadCount();
+        // Poll every minute
+        const interval = setInterval(fetchUnreadCount, 60000);
+        return () => clearInterval(interval);
+    }, [profileData]);
 
     // Use profile data if available, otherwise fall back to Auth0 user data
     const displayName = profileData?.name || user?.name;
@@ -26,6 +47,7 @@ const Sidebar = ({ mobileOpen, setMobileOpen }) => {
 
     const navItems = [
         { name: 'Dashboard', icon: 'dashboard', path: '/' },
+        { name: 'Messages', icon: 'mail', path: '/messages', badge: unreadCount > 0 ? unreadCount : null },
         { name: 'My Boats', icon: 'sailing', path: '/boats' },
         { name: 'Events', icon: 'event', path: '/events' },
         { name: 'Calendar', icon: 'calendar_month', path: '/calendar' },
@@ -66,14 +88,21 @@ const Sidebar = ({ mobileOpen, setMobileOpen }) => {
                             to={item.path}
                             onClick={() => setMobileOpen(false)} // Close on nav click
                             className={({ isActive }) =>
-                                `flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${isActive
+                                `flex items-center justify-between px-3 py-2 rounded-lg transition-colors ${isActive
                                     ? 'bg-primary/10 text-primary'
                                     : 'hover:bg-gray-100 dark:hover:bg-white/10 text-skipper-neutral-text dark:text-gray-300'
                                 }`
                             }
                         >
-                            <span className="material-symbols-outlined !text-xl" style={item.name === 'Dashboard' && item.path === '/' ? { fontVariationSettings: "'FILL' 1" } : {}}>{item.icon}</span>
-                            <p className="text-sm font-medium leading-normal">{item.name}</p>
+                            <div className="flex items-center gap-3">
+                                <span className="material-symbols-outlined !text-xl" style={item.name === 'Dashboard' && item.path === '/' ? { fontVariationSettings: "'FILL' 1" } : {}}>{item.icon}</span>
+                                <p className="text-sm font-medium leading-normal">{item.name}</p>
+                            </div>
+                            {item.badge && (
+                                <span className="bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">
+                                    {item.badge}
+                                </span>
+                            )}
                         </NavLink>
                     ))}
                 </nav>

@@ -11,6 +11,7 @@ import Crew from './pages/Crew';
 import Events from './pages/Events';
 import Calendar from './pages/Calendar';
 import MyBoats from './pages/MyBoats';
+import Messages from './pages/Messages';
 import { AuthenticationGuard } from './auth/AuthenticationGuard';
 import ProfileGuard from './auth/ProfileGuard';
 
@@ -31,6 +32,7 @@ function App() {
           <Route path="boats/:id/edit" element={<CreateBoat />} />
           <Route path="/boats" element={<MyBoats />} />
           <Route path="crew" element={<Crew />} />
+          <Route path="messages" element={<Messages />} /> {/* Added Route for Messages */}
         </Route>
 
         <Route path="profile" element={<Profile />} />

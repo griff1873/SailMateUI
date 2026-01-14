@@ -114,4 +114,14 @@ export const weatherForecast = {
     get: () => api.get('/WeatherForecast'),
 };
 
+export const messages = {
+    send: (data) => api.post('/Messages', data),
+    reply: (id, data) => api.post(`/Messages/${id}/reply`, data),
+    getAll: (params) => api.get('/Messages', { params }), // box, profileId
+    getDetails: (id, profileId) => api.get(`/Messages/${id}`, { params: { profileId } }),
+    markAsRead: (id, profileId) => api.put(`/Messages/${id}/read`, { profileId }),
+    getUnreadCount: (profileId) => api.get(`/Messages/unread-count/${profileId}`),
+    getRecipients: (profileId) => api.get('/Messages/recipients', { params: { profileId } }),
+};
+
 export default api;
