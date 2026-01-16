@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth0 } from "@auth0/auth0-react";
 import Header from '../components/layout/Header';
 import BoatCard from '../components/dashboard/BoatCard';
-import { boats as boatsService, events as eventsService, profile, boatCrew, crewEvent, setAuthToken } from '../services/api';
+import { boats as boatsService, events as eventsService, profile, boatCrew, crewEvent, messages as messagesService, setAuthToken } from '../services/api';
 import { useProfile } from '../context/ProfileContext';
 
 const Dashboard = () => {
@@ -15,6 +15,7 @@ const Dashboard = () => {
     const [upcomingEvents, setUpcomingEvents] = useState([]);
     const [pendingRequests, setPendingRequests] = useState([]);
     const [invitations, setInvitations] = useState([]);
+    const [unreadMessages, setUnreadMessages] = useState([]);
     const [myEventStatuses, setMyEventStatuses] = useState([]); // Map of eventId -> status
     const [loading, setLoading] = useState(true);
 
@@ -42,6 +43,15 @@ const Dashboard = () => {
                     setInvitations(invitesRes.data);
                 } catch (err) {
                     console.error("Error fetching invitations:", err);
+                }
+
+                // Fetch unread messages
+                try {
+                    const messagesRes = await messagesService.getAll({ profileId: profileData.id, box: 'all' });
+                    const unread = messagesRes.data.filter(m => !m.isRead && m.type === 'Received');
+                    setUnreadMessages(unread);
+                } catch (err) {
+                    console.error("Error fetching unread messages:", err);
                 }
 
                 // Fetch upcoming events
@@ -410,7 +420,7 @@ const Dashboard = () => {
                         <h2 className="text-skipper-neutral-text dark:text-gray-200 text-2xl font-bold leading-tight tracking-[-0.015em] mb-4">Inbox</h2>
 
                         <div className="flex flex-col gap-6">
-                            {pendingRequests.length === 0 && invitations.length === 0 ? (
+                            {pendingRequests.length === 0 && invitations.length === 0 && unreadMessages.length === 0 ? (
                                 <div className="text-center p-8 border border-dashed border-gray-200 dark:border-gray-700 rounded-lg">
                                     <div className="w-12 h-12 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-3">
                                         <span className="material-symbols-outlined text-gray-400 dark:text-gray-500">inbox</span>
@@ -461,7 +471,7 @@ const Dashboard = () => {
                                     {/* Invitations */}
                                     {invitations.length > 0 && (
                                         <div className="flex flex-col gap-4">
-                                            {pendingRequests.length > 0 && <hr className="border-gray-100 dark:border-gray-800" />}
+                                            {(pendingRequests.length > 0 || unreadMessages.length > 0) && <hr className="border-gray-100 dark:border-gray-800" />}
                                             <h3 className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Invitations</h3>
                                             {invitations.map(invite => (
                                                 <div key={invite.id} className="flex flex-col gap-3 p-4 border border-gray-100 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-white/5">
@@ -492,6 +502,39 @@ const Dashboard = () => {
                                                         >
                                                             Decline
                                                         </button>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+
+                                    {/* Unread Messages */}
+                                    {unreadMessages.length > 0 && (
+                                        <div className="flex flex-col gap-4">
+                                            {(pendingRequests.length > 0 || invitations.length > 0) && <hr className="border-gray-100 dark:border-gray-800" />}
+                                            <h3 className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Unread Messages</h3>
+                                            {unreadMessages.map(msg => (
+                                                <div
+                                                    key={msg.id}
+                                                    onClick={() => navigate('/messages')}
+                                                    className="flex items-start gap-4 p-3 border border-gray-100 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-white/5 hover:bg-gray-100 dark:hover:bg-white/10 transition-colors cursor-pointer"
+                                                >
+                                                    <div className="w-10 h-10 rounded-full bg-calm-blue flex items-center justify-center text-white text-xs font-bold shrink-0">
+                                                        {(msg.sender?.name || '??').substring(0, 2).toUpperCase()}
+                                                    </div>
+                                                    <div className="flex-grow min-w-0">
+                                                        <div className="flex items-center justify-between gap-2">
+                                                            <p className="text-skipper-neutral-text dark:text-white font-medium truncate">{msg.sender?.name}</p>
+                                                            <span className="text-[10px] text-gray-400 shrink-0">
+                                                                {new Date(msg.createdAt).toLocaleDateString([], { month: 'short', day: 'numeric' })}
+                                                            </span>
+                                                        </div>
+                                                        <p className="text-gray-600 dark:text-gray-300 text-sm font-semibold truncate">
+                                                            {msg.subject || '(No Subject)'}
+                                                        </p>
+                                                        <p className="text-gray-500 dark:text-gray-400 text-sm truncate">
+                                                            {msg.body}
+                                                        </p>
                                                     </div>
                                                 </div>
                                             ))}
